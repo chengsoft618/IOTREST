@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<link href="resources/css/bootstrap.css" rel="stylesheet" />
+<!-- [if lt IE 9]>
+	<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+	<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+<![endif]-->
+<script src="resources/js/jquery-2.2.1.js"></script>
+<script src="resources/js/bootstrap.js"></script>
+<script src="resources/js/util.js"></script>
+<script src="resources/js/adapter-latest.js"></script>
+<script src="resources/js/Blob.js"></script>
+<script>
+if (!HTMLCanvasElement.prototype.toBlob) {
+	Object
+			.defineProperty(
+					HTMLCanvasElement.prototype,
+					'toBlob',
+					{
+						value : function(callback,
+								type, quality) {
+
+							var binStr = atob(this
+									.toDataURL(type,
+											quality)
+									.split(',')[1]), len = binStr.length, arr = new Uint8Array(
+									len);
+
+							for (var i = 0; i < len; i++) {
+								arr[i] = binStr
+										.charCodeAt(i);
+							}
+							callback(new Blob(
+									[arr],
+									{
+										type : type
+												|| 'image/png'
+									}));
+						}
+						
+					});
+}
+
+	$(document)
+			.ready(
+					function() {
+						// 解决谷歌浏览器对canvas.toBlob的不支持	
+						function form2Json($form) {
+							var inputs = $form.find("input");
+							var json = "{";
+							inputs.each(function(i, e) {
+								if ($(e).attr("id")) {
+									json += "\"" + $(e).attr("id") + "\":\""
+											+ $(e).val() + "\",";
+
+								} else if ($(e).attr("name")) {
+									json += "\"" + $(e).attr("name") + "\":\""
+											+ $(e).val() + "\",";
+
+								}
+							});
+							json = json.substr(0, json.length - 1);
+							json += "}";
+							console.log(json);
+							return json;
+						}
+						function postJson(url, data, success, error) {
+							$.ajax({
+								url : url,
+								method : "POST",
+								contentType : "application/json;charset=UTF-8",
+								data : data,
+								dataType : "json",
+								success : success,
+								error : error
+							});
+						}
+						function infoShow(panelId, infoMsg) {
+							console.log(infoMsg);
+							$("#" + panelId + " .msgInfo").show().find("span").html(infoMsg);
+							console.log(panelId);
+							console.log($("#" + panelId + " .msgInfo"));
+									
+						}
+						
+						
+						navigator.getMedia = (navigator.getUserMedia
+								|| navigator.webkitGetUserMedia
+								|| navigator.mozGetUserMedia || navigator.msGetUserMedia);
+						
+						try{
+						if (navigator.getMedia) {
+				
+			
+							navigator.getMedia({
+		
+								video : true
+							}, function(stream) {
+								var webcam = $("#webcam")[0];
+		
+								if (window.URL) {
+								
+									webcam.src = window.URL
+											.createObjectURL(stream);
+				
+								} else {
+						
+									webcam.src = stream;
+					
+								}
+								webcam.play();
+							},
+									function(error) {
+										$("#imageSendBtn").attr(
+												"disabled", "disabled");
+										$("#cameraGroup").hide();
+										infoShow("imagesPanel", "摄像头捕获失败！")
+									});
+						} else {
+							$("#imageSendBtn").attr(
+									"disabled","disabled");
+							$("#cameraGroup").hide();
+							infoShow("imagesPanel", "无法获取摄像头");
+
+						}
+						}
+						catch(e)
+						{
+							$("#imageSendBtn").attr(
+									"disabled","disabled");
+							$("#cameraGroup").hide();
+							infoShow("imagesPanel", "无法获取摄像头");
+						}
+						$("select[name=sensorId]").click(function(){
+							var nodeId=$(this).parent().parent().find("select[name=nodeId]").val();
+							var values=$(this).find("option[data-node-id"+"="+nodeId+"]");
+							$(this).find("option[data-node-id"+"!="+nodeId+"]").hide();
+							values.show();
+						});						
+						$("select[name=nodeId]").change(function(){
+							console.log("trigger");
+							var nodeId=$(this).val();
+							console.log("nodeId:"+nodeId);
+							var sensors=$(this).parent().parent().find("select[name=sensorId]");
+							var sensorType=$(this).parent().parent().find(".sendBtn").data("sensor-type");
+							var values=sensors.find("option[data-node-id"+"="+nodeId+"]");
+							sensors.find("option[data-node-id"+"!="+nodeId+"]").hide();
+							if(values.size()<=0){
+								sensors.parent().find("label.control-label").show().find("a").attr("href","addSensor.htm?nodeId="+nodeId+"&sensorType="+sensorType);
+								sensors.parent().find("label[for=sensorId]").hide();
+								sensors.hide();
+							}
+							else{
+								sensors.parent().find("label.control-label").hide();
+								sensors.parent().find("label[for=sensorId]").show();
+								sensors.show();
+								sensors.val(values.val());
+								values.show();
+							}
+
+						});
+						$("select[name=nodeId]").trigger("change");
+ 						$(".closeBtn[type=reset]").click(
+								function(){
+									
+									var select=$(this).parent().parent().find("select[name=nodeId]");;
+									console.log(select.find("option").val());
+									select.val(select.find("option").val())
+									select.trigger("change");
+								}); 
+ 						$("#imageResetBtn").click(function(){
+							var select=$("#imagesPanel").find("select[name=nodeId]");;
+							console.log(select.find("option").val());
+							select.val(select.find("option").val())
+							select.trigger("change");
+						$("#webcam").show();
+						$("#canvas").hide();
+						});
+						$("#imageSendBtn")
+								.click(
+										function() {
+											var panelId="imagesPanel";
+											var dataType = $(this).data(
+											"sensor-data-type");
+											console.log("dataType=" + dataType);
+											var sendTime = new Date();
+											var sendTimeStr = toFomatorString(
+													sendTime,
+													"yyyy/mm/dd hh:mi:ss:si");
+											var nodeId = $(
+													"#" + panelId + " form")
+													.find("select[name=nodeId]")
+													.val();
+											var sensorId = $(
+													"#" + panelId + " form")
+													.find(
+															"select[name=sensorId]")
+													.val();
+											console.log("nodeId:" + nodeId
+													+ ",sensorId:" + sensorId);
+											
+											var oMyForm = new FormData();
+										
+											oMyForm.append("sendTime", sendTimeStr);
+											
+											var url = "nodes/" + nodeId
+													+ "/sensors/" + sensorId
+													+ "/" + dataType;
+											console.log("url: "+url);
+											var width = $("#webcam").css(
+													"width");
+											var height = $("#webcam").css(
+													"height");
+											$("#canvas").attr("width", width)
+													.attr("height", height);
+											$("#canvas").css("width", width)
+													.css("height", height);
+											var canvas = $("#canvas")[0];
+											var context = canvas
+													.getContext("2d");
+											context.drawImage($("#webcam")[0],
+													0, 0, $("#canvas").width(),
+													$("#canvas").height());
+		
+						try{
+											var blob2 = canvas
+													.toBlob(
+															function(b) {
+																var oBlob = b;
+																oMyForm.append("file",oBlob);
+																//jquery的ajax api 在post FormData时出错
+																var oReq = new XMLHttpRequest();
+																oReq.onreadystatechange=function(){
+																	if (oReq.readyState==4)
+																	  {
+																	  if (oReq.status==201)
+																	    {
+																			var viewUrl = oReq.getResponseHeader("Location");
+																			
+																			var msg="<a data-toggle='modal' data-target='#myModal' data-resource-url='"+viewUrl+"' class='btn btn-success'>"+"资源创建成功，查看资源"+"</a>";			
+																			$("#webcam").hide();
+																			$("#canvas").show();
+																			infoShow(panelId, msg);
+																	    }
+																	  else
+																	    {
+																			var msg = "资源创建失败，请检查输入数据";
+																			infoShow(panelId, msg);
+																	    }
+																	  }
+																}
+																oReq.open("POST", url);
+																oReq.send(oMyForm);
+																}
+															, "image/jpeg",
+															0.95);
+										}
+											catch(e)
+											{
+												alert(e)
+											}
+											});
+											
+										
+						$(".sendBtn")
+								.click(
+										function() {
+											var dataType = $(this).data(
+													"sensor-data-type");
+											console.log("dataType=" + dataType);
+											var panelId = dataType + "Panel";
+											var value = $(
+													"#"
+															+ panelId
+															+ " input[type=text][name=value]")
+													.val();
+											var sendTime = new Date();
+											var sendTimeStr = toFomatorString(
+													sendTime,
+													"yyyy/mm/dd hh:mi:ss:si");
+											var nodeId = $(
+													"#" + panelId + " form")
+													.find("select[name=nodeId]")
+													.val();
+											var sensorId = $(
+													"#" + panelId + " form")
+													.find(
+															"select[name=sensorId]")
+													.val();
+											console.log("nodeId:" + nodeId
+													+ ",sensorId:" + sensorId
+													+ ",value:" + value);
+											var url = "nodes/" + nodeId
+													+ "/sensors/" + sensorId
+													+ "/" + dataType;
+											var jsonData = {
+												"value" : value,
+												"sendTime" : sendTimeStr
+											};
+											var jsons = JSON.stringify(jsonData);
+											console.log(jsons)
+											var jsons2 = JSON.stringify(jsonData,null,2);
+											console.log(jsons2);
+											postJson(
+													url,
+													jsons,
+													function(data, status,
+															jqXHR) {
+														var viewUrl = jqXHR
+																.getResponseHeader("Location");
+														console.log(viewUrl);
+														var msg="<a data-toggle='modal' data-target='#myModal' data-resource-url='"+viewUrl+"' class='btn btn-success'>"+"资源创建成功，查看资源"+"</a>";
+																console.log(status);
+														infoShow(panelId, msg);
+													},
+													function(jqXHR, status) {
+														var msg = "资源创建失败，请检查输入数据";
+														infoShow(panelId, msg);
+													});
+										});
+						
+						
+						
+						$('#myModal').on("shown.bs.modal",function(e){
+							var relatedTarget=e.relatedTarget;
+							var resourceURL=$(relatedTarget).data("resource-url");
+							var modeltarget=$(relatedTarget).data("target");
+							var absoluteURL=getAbsoluteURL(resourceURL);
+							console.log(resourceURL);
+
+							$.ajax({
+								url:resourceURL,
+								type:"get",
+							    dataType : "json",
+							    success:function(data, status,jqXHR){
+							    	var json=JSON.stringify(data,null,2);
+							    	console.log(json);
+							    	$(modeltarget).find(".modal-body").html("<pre>"+json+"</pre>");
+							    	$(modeltarget).find(".modal-title").html("<code>"+"GET资源 "+absoluteURL+"</code>");
+							    	},
+							    error:function(jqXHR, status) {
+									$(modeltarget).find(".modal-body").html("请求资源出错:"+status);
+								}
+							    
+							});
+						});
+
+					});
+</script>
+<title>REST传感器数据传输网页端测试</title>
+</head>
+<body>
+	<div class="container">
+		<div class="page-header">
+			<h2>REST数据传输<small style="float:right;"><a class="btn btn-info" href="index.htm">返回节点列表</a></small></h2>
+		</div>
+			<!--REST图像-->
+
+		<div id="imagesPanel" class="panel panel-primary">
+			<div class="panel-heading">
+				<h3 class="panel-title">REST图像传输</h3>
+			</div>
+			<div style="display: none;"
+				class="msgInfo  alert alert-danger alert-dismissable">
+				<span></span>
+			</div>
+			
+			<div class="panel-body">
+				<form role="form"  class="form-inline">
+					<div class="form-group">
+				      	<label for="nodeId"><code>节点</code></label> <select name="nodeId">
+							#foreach($node in $nodes)
+							<option value="$node.id">$node.id</option> #end
+						</select>
+						</div>
+						<div class="form-group has-warning">
+					<label style="display:none;" class="control-label">该节点无图像传感器可用，<a href="#">点击创建</a></label>
+						<label class="forSensor" for="sensorId"><code>传感器ID</code></label> <select name="sensorId">
+							#foreach($sensor in $sensors)
+							#if($sensor.type=="image")
+							<option value="$sensor.id" data-node-id="$sensor.node.id">$sensor.id</option>
+							#end
+							#end
+						</select>
+					</div>
+					
+						<div class="form-group">
+						<button id="imageResetBtn" type="reset" 
+							class="btn btn-primary">重置</button>
+						<button id="imageSendBtn" type="button" data-sensor-data-type="images" data-sensor-type="image" class="btn btn-primary">发送</button>
+					</div>
+					<br/>
+					<div id="cameraGroup" class="form-group">
+						<label for="nodeImage">图像捕获内容</label><br />
+						<video id="webcam"
+							style="width: 640px; height: auto; max-width: 100%"></video>
+						<canvas  style="display:none;" id="canvas" style="max-width: 100%"></canvas>
+					</div>
+				</form>
+			</div>
+		</div>
+			<!--REST图像结束-->
+			<!--REST温度-->
+		<div id="temperaturesPanel" class="panel panel-info">
+			<div class="panel-heading">
+				<h3 class="panel-title">REST温度传输</h3>
+			</div>
+			<div style="display: none;"
+				class="msgInfo  alert alert-danger alert-dismissable">
+				<span></span>
+			</div>
+			<div class="panel-body">
+				<form role="form" class="form-inline">
+					<div class="form-group">
+						<label for="nodeId"><code>节点</code></label> <select name="nodeId">
+							#foreach($node in $nodes)
+							<option value="$node.id">$node.id</option> #end
+						</select>
+					</div>
+					<div class="form-group has-warning">
+					<label style="display:none;" class="control-label">该节点无温度传感器可用，<a href="#">点击创建</a></label>
+						<label class="forSensor" for="sensorId"><code>传感器ID</code></label> <select name="sensorId">
+							#foreach($sensor in $sensors)
+							#if($sensor.type=="temperature")
+							<option value="$sensor.id" data-node-id="$sensor.node.id">$sensor.id</option>
+							#end
+							#end
+						</select>
+					</div>
+					<div class="form-group">
+						<code>温度值</code>
+						<input type="text" name="value" placeholder="请输入温度" />
+						<code>℃</code>
+					</div>
+					<div class="form-group">
+						<input type="hidden" value="temperatures" />
+						<button type="reset" class="closeBtn btn btn-info">重置</button>
+						<button type="button" data-sensor-data-type="temperatures" data-sensor-type="temperature"
+							class="sendBtn btn btn-info">发送</button>
+					</div>
+				</form>
+			</div>
+		</div>
+			<!--REST温度结束-->
+		<!--REST烟雾  -->
+				<div id="smokesPanel" class="panel panel-success">
+			<div class="panel-heading">
+				<h3 class="panel-title">REST烟雾传输</h3>
+			</div>
+			<div style="display: none;"
+				class="msgInfo  alert alert-danger alert-dismissable">
+				<span></span>
+			</div>
+			<div class="panel-body">
+				<form role="form" class="form-inline">
+					<div class="form-group">
+						<label for="nodeId"><code>节点</code></label> <select name="nodeId">
+							#foreach($node in $nodes)
+							<option value="$node.id">$node.id</option> #end
+						</select>
+					</div>
+					<div class="form-group has-warning">
+					<label style="display:none;" class="control-label">该节点无烟雾 传感器可用，<a href="#">点击创建</a></label>
+						<label class="forSensor" for="sensorId"><code>传感器ID</code></label> <select name="sensorId">
+							#foreach($sensor in $sensors)
+							#if($sensor.type=="smoke")
+							<option value="$sensor.id" data-node-id="$sensor.node.id">$sensor.id</option>
+							#end
+							#end
+						</select>
+					</div>
+					<div class="form-group">
+						<code>烟雾值</code>
+						<input type="text" name="value" placeholder="请输入烟雾值" />
+						<code>PPM</code>
+					</div>
+					<div class="form-group">
+						<input type="hidden" value="temperatures" />
+						<button type="reset" class="closeBtn btn btn-info">重置</button>
+						<button type="button" data-sensor-data-type="smokes" data-sensor-type="smoke"
+							class="sendBtn btn btn-info">发送</button>
+					</div>
+				</form>
+			</div>
+		</div>
+		<!--REST烟雾结束-->
+<!--REST湿度 -->
+				<div id="humiditiesPanel" class="panel panel-warning">
+			<div class="panel-heading">
+				<h3 class="panel-title">REST湿度 传输</h3>
+			</div>
+			<div style="display: none;"
+				class="msgInfo  alert alert-danger alert-dismissable">
+				<span></span>
+			</div>
+			<div class="panel-body">
+				<form role="form" class="form-inline">
+					<div class="form-group">
+						<label for="nodeId"><code>节点</code></label> <select name="nodeId">
+							#foreach($node in $nodes)
+							<option value="$node.id">$node.id</option> #end
+						</select>
+					</div>
+					<div class="form-group has-warning">
+					<label style="display:none;" class="control-label">该节点无湿度度传感器可用，<a href="#">点击创建</a></label>
+						<label class="forSensor" for="sensorId"><code>传感器ID</code></label> <select name="sensorId">
+							#foreach($sensor in $sensors)
+							#if($sensor.type=="humidity")
+							<option value="$sensor.id" data-node-id="$sensor.node.id">$sensor.id</option>
+							#end
+							#end
+						</select>
+					</div>
+					<div class="form-group">
+						<code>湿度值</code>
+						<input type="text" name="value" placeholder="请输入湿度" />
+						<code>%RH</code>
+					</div>
+					<div class="form-group">
+						<input type="hidden" value="humidities" />
+						<button type="reset" class="closeBtn btn btn-info">重置</button>
+						<button type="button" data-sensor-data-type="humidities" data-sensor-type="humidity"
+							class="sendBtn btn btn-info">发送</button>
+					</div>
+				</form>
+			</div>
+		</div>
+		<!--REST湿度结束-->
+		
+		<!-- modal -->
+		<div class="modal fade" id="myModal" tabindex="-1" role="dialog"
+			aria-labelledby="myModalLabel" aria-hidden="true">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"
+							aria-hidden="true">&times;</button>
+						<h4 class="modal-title">模态框（Modal）标题</h4>
+					</div>
+					<div class="modal-body">				<div class="progress progress-striped active">
+					<div class="progress-bar" role="progressbar" style="width: 100%;">
+					</div>
+				</div></div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary" data-dismiss="modal">关闭
+						</button>
+					</div>
+				</div>
+				
+			</div>
+		</div>
+		<!-- modal -->
+	</div>
+</body>
+</html>

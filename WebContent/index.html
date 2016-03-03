@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<link href="resources/css/bootstrap.css" rel="stylesheet" />
+<!-- [if lt IE 9]>
+	<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+	<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+<![endif]-->
+<script src="resources/js/jquery-1.12.0.js"></script>
+<script src="resources/js/bootstrap.js"></script>
+<script src="resources/js/util.js"></script>
+<script>
+	$(document).ready(
+		function(){
+			var i=4;
+			function test(){
+					if(i==0){
+						console.log(i)
+						window.location.href="rest/index.htm";
+					}
+					if(i==1){
+						 $("#progress").css("width","100%")
+					}
+					if(i==2){
+						 $("#progress").css("width","90%")
+					}
+					if(i==3){
+						 $("#progress").css("width","70%")
+					}
+					i--;
+				}
+			  setInterval(test,500);
+		});
+	
+</script>
+<title>REST网页端测试</title>
+
+</head>
+<body>
+	<div class="container">
+		<div class="page-header">
+			<h2><code>欢迎使用REST网页端测试</code></h2>
+		</div>
+		<div  class="progress progress-striped active">
+			<div id="progress" class="progress-bar" role="progressbar" style="width:60%;">
+			</div>
+		</div>
+	</div>
+</body>
+</html>
