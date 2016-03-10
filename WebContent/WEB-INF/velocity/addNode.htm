@@ -11,6 +11,7 @@
 	<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
 <![endif]-->
 <script src="resources/js/jquery-1.12.0.js"></script>
+<script src="resources/js/jquery.validate.js"></script>
 <script src="resources/js/bootstrap.js"></script>
 <script src="resources/js/util.js"></script>
 <script>
@@ -66,6 +67,50 @@
 						infoShow("资源创建失败，请检查输入数据");
 					})
 				})
+				
+				
+					$("#nodeForm")
+						.validate(
+								{
+									rules : {
+										name : "required",
+										longitude : {
+											required : true,
+											number : true
+										},
+										latitude : {
+											required : true,
+											number : true
+										}
+									},
+									messages : {
+										name : "输入名称不能为空",
+										longitude : "请输入数字",
+										latitude : "请输入数字",
+									},
+									highlight : function(element, errorClass,
+											validClass) {
+										console.log(errorClass);
+										$(element).parents(".col-sm-8")
+												.addClass("has-error")
+												.removeClass("has-success");
+									},
+									unhighlight : function(element, errorClass,
+											validClass) {
+										console.log(errorClass);
+										$(element).parents(".col-sm-8")
+												.addClass("has-success")
+												.removeClass("has-error");
+									},
+									errorElement: "label",
+									errorPlacement: function ( error, element ) {
+
+										error.addClass( "control-label" );
+										error.insertAfter( element );
+
+									},
+								});
+				
 				
 				
 				$('#myModal').on("shown.bs.modal",function(e){
