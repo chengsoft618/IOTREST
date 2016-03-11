@@ -55,7 +55,9 @@
 				$("#createBtn").click(function() {
 					var url = "nodes/";
 					var str = form2Json($("#nodeForm"));
-
+					if(!validateForm($("#nodeForm"))){
+						return;
+					}
 					var jsons = JSON.parse(str);
 					console.log(jsons);
 					postJson(url, str, function(data, status,jqXHR) {
@@ -68,8 +70,9 @@
 					})
 				})
 				
-				
-					$("#nodeForm")
+				function validateForm(form){
+					console.log(form);
+					var r=form
 						.validate(
 								{
 									rules : {
@@ -109,8 +112,30 @@
 										error.insertAfter( element );
 
 									},
-								});
+								}).form();
+					console.log(r);
+					return r;
+				}
 				
+				
+				if (navigator.geolocation) {
+					var watchId = navigator.geolocation.watchPosition(
+							function success(pos) {
+								var longitude = pos.coords.longitude;
+								var latitude = pos.coords.latitude;
+								$(".msgInfo").show().find("span").text(
+										"当前所在经度:" + longitude + ";所在纬度:"
+												+ latitude);
+								$("[name=longitude]").val(longitude);
+								$("[name=latitude]").val(latitude);
+							}, function error(e) {
+								navigator.geolocation.clearWatch(watchId);
+								$(".msgInfo").show().find("span").text(
+										"无法获得当前所在位置!");
+							}, {
+								timeout : 2000
+							});
+				}
 				
 				
 				$('#myModal').on("shown.bs.modal",function(e){
@@ -159,28 +184,28 @@
 						<div class="form-group">
 							<label class="col-sm-4 control-label">节点名称</label>
 							<div class="col-sm-8">
-								<input type="text" class="form-control" id="name"
+								<input type="text" class="form-control" name="name" id="name"
 									placeholder="请输入监控节点名称" />
 							</div>
 						</div>
 						<div class="form-group">
 							<label class="col-sm-4 control-label">节点经度</label>
 							<div class="col-sm-8">
-								<input type="text" class="form-control" id="longitude"
+								<input type="text" class="form-control" name="longitude" id="longitude"
 									placeholder="请输入监控节点经度" />
 							</div>
 						</div>
 						<div class="form-group">
 							<label class="col-sm-4 control-label">节点纬度</label>
 							<div class="col-sm-8">
-								<input type="text" class="form-control" id="latitude"
+								<input type="text" class="form-control" id="latitude" name="latitude"
 									placeholder="请输入监控节点纬度" />
 							</div>
 						</div>
 						<div class="form-group">
 							<label class="col-sm-4 control-label">节点描述</label>
 							<div class="col-sm-8">
-								<input type="text" class="form-control" id="description"
+								<input type="text" class="form-control" id="description" name="description"
 									placeholder="请输入监控节点描述" />
 							</div>
 						</div>

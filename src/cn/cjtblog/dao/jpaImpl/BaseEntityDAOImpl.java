@@ -16,7 +16,7 @@ public abstract class BaseEntityDAOImpl<T> {
     public  BaseEntityDAOImpl() {  
         Type genType = getClass().getGenericSuperclass();  
         Type[] params = ((ParameterizedType) genType).getActualTypeArguments();  
-        entityClass = (Class) params[0];  
+        entityClass = (Class<T>) params[0];  
     }  
 
     public EntityManager getEntityManager(){
