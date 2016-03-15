@@ -240,6 +240,8 @@
 											context.drawImage($("#webcam")[0],
 													0, 0, $("#canvas").width(),
 													$("#canvas").height());
+											$("#webcam").hide();
+											$("#canvas").show();
 		
 						try{
 											var blob2 = canvas
@@ -257,8 +259,8 @@
 																			var viewUrl = oReq.getResponseHeader("Location");
 																			
 																			var msg="<a data-toggle='modal' data-target='#myModal' data-resource-url='"+viewUrl+"' class='btn btn-success'>"+"资源创建成功，查看资源"+"</a>";			
-																			$("#webcam").hide();
-																			$("#canvas").show();
+																			$("#webcam").show();
+																			$("#canvas").hide();
 																			infoShow(panelId, msg);
 																	    }
 																	  else
